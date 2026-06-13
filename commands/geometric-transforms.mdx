@@ -1,0 +1,69 @@
+---
+title: "Geometric Transformation Commands: Flip and Rotate"
+sidebarTitle: "Geometric Transforms"
+description: "Reference for the flip and rotate CLI commands — mirror images horizontally or rotate by any angle with automatic canvas expansion."
+---
+
+The geometric transformation commands reposition pixels in space without altering their colour values. The `flip` command mirrors an image horizontally in a single NumPy operation, while `rotate` applies a full rotation matrix to move every pixel to its new position in an automatically expanded canvas. Both commands follow the standard `python main.py <command> <src> <dest>` syntax; `rotate` additionally prompts you for an angle before processing begins.
+
+---
+
+## flip
+
+The `flip` command mirrors the image horizontally — left becomes right and right becomes left — by passing the pixel array through NumPy's `np.fliplr()`. The operation is lossless and produces an output with exactly the same dimensions as the source.
+
+- **Interactive prompt:** none
+- **Output suffix:** `_flipped`
+
+**Example**
+
+```bash
+python main.py flip Input_Image/mountains.jpg Output_Image/
+```
+
+Output file: `mountains_flipped.jpg`
+
+---
+
+## rotate
+
+The `rotate` command rotates the image by an arbitrary integer angle (in degrees) using a standard 2-D rotation matrix. For each pixel at coordinates `(x, y)` relative to the image centre, the new position is computed as:
+
+```
+new_x = x · cos(θ) + y · sin(θ)
+new_y = −x · sin(θ) + y · cos(θ)
+```
+
+To ensure no part of the rotated image is cropped, the output canvas is automatically expanded so that the full bounding box of the rotated original fits inside it. The new dimensions are:
+
+```
+new_height = round(|height · cos(θ)| + |width · sin(θ)|) + 1
+new_width  = round(|width  · cos(θ)| + |height · sin(θ)|) + 1
+```
+
+Pixels are mapped from the original canvas to the new one by adjusting coordinates relative to both the original and new image centres. Any position in the new canvas that no source pixel maps to is left at zero.
+
+<Note>
+The rotation prompt accepts only **integer** values. Passing a decimal angle (e.g., `45.5`) will raise a `ValueError` because the implementation calls `int()` on your input directly.
+</Note>
+
+<Tip>
+Gaps introduced around the rotated image are filled with **black pixels** (zero values). If clean edges are important for your use case, crop the output after rotating to remove the black border — for example using a second call to an image editor or a Python script that slices the output array.
+</Tip>
+
+- **Interactive prompt:** `Enter angle in degrees:` — integer (e.g., `45`)
+- **Output suffix:** `_rotated_<angle>`
+
+**Example**
+
+```bash
+python main.py rotate Input_Image/building.jpg Output_Image/
+```
+
+When prompted, enter the rotation angle:
+
+```bash
+Enter angle in degrees: 45
+```
+
+Output file: `building_rotated_45.jpg`

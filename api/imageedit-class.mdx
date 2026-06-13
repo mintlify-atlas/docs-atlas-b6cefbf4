@@ -1,0 +1,140 @@
+---
+title: "imageEdit Class: Constructor, Attributes, and I/O Methods"
+sidebarTitle: "imageEdit Class"
+description: "Full reference for the imageEdit class constructor, instance attributes (src, dest, inp, outp), and I/O methods: loadImg, writeImg, and showOutput."
+---
+
+The `imageEdit` class, defined in `src/imageEdit.py`, is the programmatic core of Image Transformation. It encapsulates a source image path, an output directory, the loaded input array, and the processed output array — along with every transformation method the library provides. Instantiate it directly when you want to integrate image transformations into your own Python scripts, rather than driving the tool through its CLI.
+
+## Import
+
+```python
+from src.imageEdit import imageEdit
+```
+
+## Constructor
+
+```python
+imageEdit(src: str, dest: str)
+```
+
+Initialises a new `imageEdit` instance. Both path strings are resolved to absolute paths immediately using `pathlib.Path.resolve()`, so relative paths work correctly regardless of the working directory your script is launched from. `inp` and `outp` start as `None` and are populated by `loadImg()` and the transformation methods respectively.
+
+<ParamField path="src" type="str" required>
+  Path to the input image file (JPEG, PNG, or any format supported by
+  `matplotlib.image.imread`). Resolved to an absolute path via
+  `pathlib.Path.resolve()` and stored as `self.src`.
+</ParamField>
+
+<ParamField path="dest" type="str" required>
+  Path to the output **directory** where processed images will be saved.
+  Resolved to an absolute path and stored as `self.dest`. This attribute is
+  later mutated by `writeImg()` to include the full output filename — see the
+  warning below.
+</ParamField>
+
+## Instance Attributes
+
+After construction the object exposes four attributes that are referenced throughout every transformation method:
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `src` | `pathlib.Path` | Absolute path to the source image file. Set once in `__init__` and never changed. |
+| `dest` | `pathlib.Path` | Output directory path on construction. **Mutated** by `writeImg()` to become the full output file path. |
+| `inp` | `numpy.ndarray \| None` | Loaded input image array of shape `(H, W, C)`. `None` until `loadImg()` is called. |
+| `outp` | `numpy.ndarray \| None` | Processed output image array. `None` until a transformation method is called. Shape and dtype depend on the transformation applied. |
+
+## I/O Methods
+
+These three methods handle loading source images from disk, saving processed results, and rendering an interactive preview. They are not transformation methods — they form the input/output lifecycle that wraps every transformation.
+
+### `loadImg()`
+
+```python
+obj.loadImg()
+```
+
+Reads the image at `self.src` using `matplotlib.image.imread()` and stores the resulting NumPy array in `self.inp`. For JPEG images this produces a `uint8` array of shape `(H, W, 3)`; for PNG images it produces a `float32` array in `[0, 1]` of shape `(H, W, 4)` when an alpha channel is present.
+
+<Note>
+  `loadImg()` must be called before any transformation method. Every
+  transformation reads from `self.inp`; calling a transformation with
+  `self.inp = None` will raise an `AttributeError` or a `TypeError` at runtime.
+</Note>
+
+### `writeImg(format: str)`
+
+```python
+obj.writeImg(format: str)
+```
+
+Saves `self.outp` to disk. The output filename is assembled as `<stem>_<format><ext>` — for example, saving a grayscale version of `mountains.jpg` with `format="grayscale"` produces `mountains_grayscale.jpg`. The full output path is constructed by joining the original `self.dest` directory with this filename, and `self.dest` is **updated in place** to point to that file.
+
+Internally, `matplotlib.image.imsave()` is used to write the array, which infers the file format from the file extension inherited from the source image.
+
+<ParamField path="format" type="str" required>
+  A short label describing the transformation applied, used as a suffix in the
+  output filename. For example `"grayscale"`, `"edge"`, `"contrast"`. Any
+  string that produces a valid filename on your OS is accepted.
+</ParamField>
+
+<Warning>
+  `writeImg()` mutates `self.dest` from an output **directory** path to a full
+  output **file** path. Calling `writeImg()` a second time on the same object
+  will attempt to treat that file path as a directory, producing an incorrect
+  (or broken) output path. If you need to save two different versions of the
+  same source image, create a separate `imageEdit` instance for each output.
+
+  ```python
+  # Correct — separate objects for separate outputs
+  gs_obj = imageEdit("Input_Image/mountains.jpg", "Output_Image/")
+  gs_obj.loadImg()
+  gs_obj.grayscale()
+  gs_obj.writeImg("grayscale")
+
+  edge_obj = imageEdit("Input_Image/mountains.jpg", "Output_Image/")
+  edge_obj.loadImg()
+  edge_obj.edgeDetection()
+  edge_obj.writeImg("edge")
+  ```
+</Warning>
+
+### `showOutput()`
+
+```python
+obj.showOutput()
+```
+
+Displays `self.outp` in an interactive Matplotlib window using `plt.imshow()` followed by `plt.show()`. Execution **blocks** until the plot window is closed by the user. This method is intended for exploratory use; in automated or headless environments (CI, servers without a display) it will either raise a `RuntimeError` or hang indefinitely — use `writeImg()` to persist results instead.
+
+## Full Usage Example
+
+The standard pattern for every transformation is: construct → load → transform → write → (optionally) preview.
+
+```python
+from src.imageEdit import imageEdit
+
+obj = imageEdit("Input_Image/mountains.jpg", "Output_Image/")
+obj.loadImg()
+obj.grayscale()
+obj.writeImg("grayscale")  # saves mountains_grayscale.jpg
+obj.showOutput()            # displays the result; blocks until window closed
+```
+
+For multiple transformations on the same source image, use independent objects so that `self.dest` is not inadvertently reused:
+
+```python
+from src.imageEdit import imageEdit
+
+# Grayscale copy
+gs = imageEdit("Input_Image/mountains.jpg", "Output_Image/")
+gs.loadImg()
+gs.grayscale()
+gs.writeImg("grayscale")
+
+# Flipped copy — fresh object, self.dest reset to directory
+fl = imageEdit("Input_Image/mountains.jpg", "Output_Image/")
+fl.loadImg()
+fl.flip()
+fl.writeImg("flip")
+```

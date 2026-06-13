@@ -1,0 +1,89 @@
+{
+  "projectType": "cli-tool",
+  "projectName": "Image Transformation",
+  "projectDescription": "A Python command-line tool for applying image transformations such as edge detection, grayscale conversion, scaling, flipping, rotation, color inversion, contrast adjustment, RGB channel isolation, and transparency using NumPy and Matplotlib.",
+  "theme": "palm",
+  "primaryColor": "#4A90D9",
+  "lightColor": "#EAF3FB",
+  "darkColor": "#1B3A5C",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Command Reference",
+            "pages": [
+              "commands/overview",
+              "commands/color-transforms",
+              "commands/geometric-transforms",
+              "commands/scaling"
+            ]
+          },
+          {
+            "group": "API Reference",
+            "pages": [
+              "api/imageedit-class",
+              "api/methods"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/configuration",
+              "guides/examples",
+              "guides/troubleshooting"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Edge detection using Sobel filters (pure NumPy, no OpenCV)",
+    "Grayscale conversion with luminosity weighting",
+    "Image upscaling and downscaling by integer factors",
+    "Horizontal image flipping",
+    "Arbitrary-angle image rotation with canvas expansion",
+    "Color inversion (negative image)",
+    "Contrast enhancement with percentile clipping",
+    "RGB channel isolation (single or mixed channels)",
+    "Transparency / alpha-channel addition",
+    "Cross-platform setup scripts for Linux/macOS (shell) and Windows (PowerShell)"
+  ],
+  "publicApiSurface": [
+    "python main.py detect-edges <src> <dest>",
+    "python main.py grayscale <src> <dest>",
+    "python main.py upscale <src> <dest>",
+    "python main.py downscale <src> <dest>",
+    "python main.py flip <src> <dest>",
+    "python main.py rotate <src> <dest>",
+    "python main.py invert-color <src> <dest>",
+    "python main.py contrast <src> <dest>",
+    "python main.py rgb-channels <src> <dest>",
+    "python main.py transparency <src> <dest>",
+    "imageEdit(src, dest)",
+    "imageEdit.loadImg()",
+    "imageEdit.writeImg(format)",
+    "imageEdit.showOutput()",
+    "imageEdit.edgeDetection()",
+    "imageEdit.grayscale()",
+    "imageEdit.upscale()",
+    "imageEdit.downscale()",
+    "imageEdit.resize()",
+    "imageEdit.flip()",
+    "imageEdit.rotate()",
+    "imageEdit.invertColor()",
+    "imageEdit.contrast()",
+    "imageEdit.rgbchannel()",
+    "imageEdit.transparency()"
+  ]
+}

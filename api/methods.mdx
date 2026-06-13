@@ -1,0 +1,349 @@
+---
+title: "imageEdit Transformation Methods: Full Python API Reference"
+sidebarTitle: "Methods"
+description: "Detailed reference for imageEdit methods: grayscale, edgeDetection, flip, rotate, upscale, downscale, invertColor, contrast, rgbchannel, and transparency."
+---
+
+The `imageEdit` class exposes ten transformation methods, each of which reads from `self.inp` (populated by `loadImg()`) and writes its result into `self.outp`. Some methods return `self.outp` explicitly; others set it in place and return `None`. Several methods are interactive — they call Python's built-in `input()` to collect parameters at runtime, which means they will block and wait for keyboard input when invoked. All methods require `loadImg()` to have been called first.
+
+<Tip>
+  Methods that call `input()` — including `upscale`, `downscale`, `rotate`,
+  `contrast`, `rgbchannel`, `transparency`, and `resize` — will **block
+  execution** while waiting for a terminal prompt. In automated pipelines or
+  test suites, monkey-patch `builtins.input` before calling the method, or
+  drive the process via `subprocess` with `stdin` set to a `PIPE` and feed the
+  expected values programmatically.
+
+  ```python
+  import builtins
+
+  # Patch input to always return "2" for automated upscaling
+  builtins.input = lambda _: "2"
+  obj.upscale()
+  ```
+</Tip>
+
+---
+
+## grayscale()
+
+```python
+grayscale() -> numpy.ndarray
+```
+
+Converts the loaded colour image to grayscale using the standard luminosity-weighted formula. The weighted sum `R×0.299 + G×0.587 + B×0.114` is computed for every pixel, and the resulting scalar luminance value is written back into all three channels of a copy of `self.inp`, preserving the original three-channel shape. This means the output is still a 3-channel array — it simply appears grey because all channels carry the same value.
+
+- **Prompt:** None
+- **Output dtype:** same as `self.inp` (typically `float32` for PNG, `uint8` for JPEG)
+- **Output shape:** same as `self.inp` — `(H, W, 3)`
+- **Returns:** `self.outp`
+
+```python
+from src.imageEdit import imageEdit
+
+obj = imageEdit("Input_Image/mountains.jpg", "Output_Image/")
+obj.loadImg()
+obj.grayscale()
+obj.writeImg("grayscale")  # → mountains_grayscale.jpg
+```
+
+---
+
+## edgeDetection()
+
+```python
+edgeDetection() -> numpy.ndarray
+```
+
+Detects edges in the image by applying 3×3 Sobel filters to a grayscale representation of the input. Internally, `grayscale()` is called first to produce a luminance array, and then the vertical and horizontal Sobel kernels are convolved with each 3×3 neighbourhood. The edge score at each pixel is computed as `sqrt(vertical_score² + horizontal_score²)`, where each score is the element-wise product of the kernel and the local 3×3 patch, summed and divided by 4. The resulting edge-score map is normalised to `[0, 1]` by dividing by its own maximum value.
+
+Because the convolution requires a full 3×3 neighbourhood, a 3-pixel border around the image is left as zero (black). This is an expected artefact of the sliding-window approach used.
+
+- **Prompt:** None
+- **Output dtype:** `float64`
+- **Output shape:** same as `self.inp` — `(H, W, 3)`
+- **Returns:** `self.outp`
+
+```python
+from src.imageEdit import imageEdit
+
+obj = imageEdit("Input_Image/building.jpg", "Output_Image/")
+obj.loadImg()
+obj.edgeDetection()
+obj.writeImg("edge")  # → building_edge.jpg
+```
+
+---
+
+## invertColor()
+
+```python
+invertColor() -> None
+```
+
+Produces a photographic negative of the image by applying a bitwise NOT to every byte of a copy of `self.inp`. For an 8-bit unsigned integer array, `~pixel_value` is equivalent to `255 - pixel_value`, so bright pixels become dark and dark pixels become bright, with colours shifted to their complements.
+
+- **Prompt:** None
+- **Input requirement:** `self.inp` must be a `uint8` array. Calling this on a `float` array (e.g., a PNG loaded by Matplotlib) will produce incorrect results because bitwise NOT on float bytes yields meaningless values.
+- **Output dtype:** `uint8` (same as input)
+- **Output shape:** same as `self.inp`
+- **Returns:** `None` (sets `self.outp` in place)
+
+```python
+from src.imageEdit import imageEdit
+
+obj = imageEdit("Input_Image/portrait.jpg", "Output_Image/")
+obj.loadImg()
+obj.invertColor()
+obj.writeImg("invert")  # → portrait_invert.jpg
+```
+
+---
+
+## contrast()
+
+```python
+contrast() -> None
+```
+
+Enhances image contrast by clipping pixel values to the 2nd–98th percentile range and then linearly rescaling the clipped values to `[0, percentage/100 × 255]`. Percentile clipping removes extreme highlights and shadows before rescaling, which prevents a small number of very bright or very dark pixels from compressing the rest of the tonal range. The output is cast to `uint8`.
+
+- **Prompt:** `Enter contrast percentage: ` — expects an **integer** (e.g., `80`). A value of `100` rescales to the full `[0, 255]` range; lower values compress the output range, producing a darker result.
+- **Output dtype:** `uint8`
+- **Output shape:** same as `self.inp`
+- **Returns:** `None` (sets `self.outp` in place)
+
+```python
+from src.imageEdit import imageEdit
+
+obj = imageEdit("Input_Image/landscape.jpg", "Output_Image/")
+obj.loadImg()
+obj.contrast()          # prompts: Enter contrast percentage:
+obj.writeImg("contrast")
+```
+
+---
+
+## rgbchannel()
+
+```python
+rgbchannel() -> None
+```
+
+Isolates one or more colour channels by zeroing out the channels not selected. A new zero-filled array matching `self.inp`'s shape is created, and only the channels named in the user's input are copied from `self.inp`. For example, entering `rb` keeps the red and blue channels and zeroes the green channel, producing a magenta-tinted image. The method loops indefinitely until valid input matching the pattern `^r?g?b?$` is received.
+
+- **Prompt:** `Enter channel composition: ` — a string containing any combination of the characters `r`, `g`, and `b` in that order (e.g., `r`, `g`, `b`, `rg`, `rb`, `gb`, `rgb`). Input is lowercased automatically.
+- **Validation:** checked against the regular expression `^r?g?b?$`; any other string (including an empty string or a string with characters outside `r`, `g`, `b`) causes the prompt to repeat.
+- **Output dtype:** `uint8`
+- **Output shape:** same as `self.inp` — `(H, W, 3)`
+- **Returns:** `None` (sets `self.outp` in place)
+
+```python
+from src.imageEdit import imageEdit
+
+obj = imageEdit("Input_Image/flower.jpg", "Output_Image/")
+obj.loadImg()
+obj.rgbchannel()        # prompts: Enter channel composition:
+obj.writeImg("red")     # → flower_red.jpg
+```
+
+---
+
+## transparency()
+
+```python
+transparency() -> None
+```
+
+Adds a fourth alpha channel to the image, creating an RGBA output. A new `(H, W, 4)` array of zeros is initialised, the RGB channels are copied from `self.inp`, and the alpha channel is filled uniformly with `int((100 - percentage) / 100 × 255)`. A percentage of `0` yields an alpha of `255` (fully opaque); a percentage of `100` yields an alpha of `0` (fully transparent).
+
+- **Prompt:** `Enter transparency percentage: ` — expects a **float** in the range `[0, 100]`.
+- **Output dtype:** `uint8`
+- **Output shape:** `(H, W, 4)` — one extra channel compared to a standard RGB input
+- **Returns:** `None` (sets `self.outp` in place)
+
+<Warning>
+  The alpha channel is **only preserved by PNG**. If you call `writeImg()` with
+  a source image whose extension is `.jpg` or `.jpeg`, Matplotlib's `imsave`
+  will silently drop the alpha channel because JPEG does not support
+  transparency. To retain the alpha data, use a PNG source (or rename the
+  output manually). For example:
+
+  ```python
+  # Use a PNG source so the output extension is also .png
+  obj = imageEdit("Input_Image/logo.png", "Output_Image/")
+  obj.loadImg()
+  obj.transparency()      # prompts: Enter transparency percentage:
+  obj.writeImg("transparent")  # → logo_transparent.png ✓
+  ```
+</Warning>
+
+---
+
+## flip()
+
+```python
+flip() -> None
+```
+
+Mirrors the image horizontally (left–right) using `numpy.fliplr`. Every row of pixels is reversed in place, producing a mirror image around the vertical axis. This is a lossless operation — no interpolation is performed and no pixel values are altered.
+
+- **Prompt:** None
+- **Output dtype:** same as `self.inp`
+- **Output shape:** same as `self.inp`
+- **Returns:** `None` (sets `self.outp` in place)
+
+```python
+from src.imageEdit import imageEdit
+
+obj = imageEdit("Input_Image/mountains.jpg", "Output_Image/")
+obj.loadImg()
+obj.flip()
+obj.writeImg("flip")  # → mountains_flip.jpg
+```
+
+---
+
+## rotate()
+
+```python
+rotate() -> None
+```
+
+Rotates the image by an arbitrary angle using a 2D rotation matrix. The output canvas is automatically expanded so that the entire rotated image fits without cropping — new dimensions are calculated from the original dimensions and the sine/cosine of the angle. Each source pixel's coordinates are transformed relative to the image centre and mapped to the expanded canvas; pixels that fall outside the original image boundaries remain zero (black). The result is cast to `uint8`.
+
+The entered angle is stored as `self.ang` (integer degrees). The CLI uses `self.ang` when building the output filename suffix, so this attribute must remain set after the method returns.
+
+- **Prompt:** `Enter angle in degrees: ` — expects a positive or negative **integer** (e.g., `45`, `-90`, `180`).
+- **Output dtype:** `uint8`
+- **Output shape:** `(new_H, new_W, C)` where `new_H` and `new_W` are larger than the originals for most non-axis-aligned angles
+- **Returns:** `None` (sets `self.outp` in place)
+
+```python
+from src.imageEdit import imageEdit
+
+obj = imageEdit("Input_Image/mountains.jpg", "Output_Image/")
+obj.loadImg()
+obj.rotate()         # prompts: Enter angle in degrees:
+obj.writeImg("rotate")
+```
+
+---
+
+## upscale()
+
+```python
+upscale() -> None
+```
+
+Enlarges the image by an integer factor using nearest-neighbour pixel repetition. Each pixel is repeated `f` times along both axes via `numpy.ndarray.repeat`, which means a `(H, W, C)` input becomes `(H×f, W×f, C)`. Because it repeats exact pixel values rather than interpolating, the result has a blocky, pixelated appearance at large factors — this is fast but lower quality than interpolation-based upscaling.
+
+- **Prompt:** `Enter scaling factor: ` — expects a positive **integer** (e.g., `2`, `3`).
+- **Output dtype:** same as `self.inp`
+- **Output shape:** `(H×f, W×f, C)`
+- **Returns:** `None` (sets `self.outp` in place)
+
+```python
+from src.imageEdit import imageEdit
+
+obj = imageEdit("Input_Image/thumbnail.jpg", "Output_Image/")
+obj.loadImg()
+obj.upscale()          # prompts: Enter scaling factor:
+obj.writeImg("upscale")
+```
+
+---
+
+## downscale()
+
+```python
+downscale() -> None
+```
+
+Shrinks the image by an integer factor using uniform pixel subsampling. Every `f`-th pixel is selected along both axes via array slicing (`self.inp[::f, ::f]`), so a `(H, W, C)` input produces approximately `(H//f, W//f, C)`. No averaging or anti-aliasing is applied — pixels between the sampled positions are discarded entirely, which can introduce aliasing on fine detail at large factors.
+
+- **Prompt:** `Enter downscale factor: ` — expects a positive **integer** (e.g., `2`, `4`).
+- **Output dtype:** same as `self.inp`
+- **Output shape:** `(H//f, W//f, C)`
+- **Returns:** `None` (sets `self.outp` in place)
+
+```python
+from src.imageEdit import imageEdit
+
+obj = imageEdit("Input_Image/highres.jpg", "Output_Image/")
+obj.loadImg()
+obj.downscale()          # prompts: Enter downscale factor:
+obj.writeImg("downscale")
+```
+
+---
+
+## resize()
+
+```python
+resize() -> None
+```
+
+Scales the image independently along the width and height axes using separate float scaling factors. The method prompts for both factors and then dispatches to one of four strategies depending on whether each factor is greater or less than 1:
+
+| Width factor | Height factor | Strategy |
+|---|---|---|
+| `> 1` | `> 1` | Both axes upscaled via `repeat` |
+| `> 1` | `<= 1` | Width upscaled via slice, height upscaled via `repeat` |
+| `<= 1` | `> 1` | Height upscaled via slice, width upscaled via `repeat` |
+| `<= 1` | `<= 1` | Both axes downscaled via stride slicing |
+
+- **Prompts:**
+  - `Enter scaling factor for width: ` — **float** (e.g., `1.5` to widen by 50 %, `0.5` to halve width)
+  - `Enter scaling factor for height: ` — **float** (e.g., `2.0` to double height)
+- **Output dtype:** same as `self.inp`
+- **Output shape:** varies depending on factors
+- **Returns:** `None` (sets `self.outp` in place)
+
+<Note>
+  `resize()` is **not exposed as a CLI command** — it is only accessible through
+  the Python API. Use `upscale()` or `downscale()` if you are working via the
+  command line and need uniform scaling.
+</Note>
+
+```python
+from src.imageEdit import imageEdit
+
+obj = imageEdit("Input_Image/photo.jpg", "Output_Image/")
+obj.loadImg()
+obj.resize()          # prompts for width factor, then height factor
+obj.writeImg("resize")
+```
+
+---
+
+## Worked Example: Multiple Transforms on Different Images
+
+The pattern below shows how to apply different transformations to separate images in the same script. Each transformation uses its own `imageEdit` instance to avoid the `self.dest` mutation issue described in the [imageEdit Class reference](/api/imageedit-class).
+
+```python
+from src.imageEdit import imageEdit
+
+# Apply edge detection to a building photograph
+edge_obj = imageEdit("Input_Image/building.jpg", "Output_Image/")
+edge_obj.loadImg()
+edge_obj.edgeDetection()
+edge_obj.writeImg("edge")
+# → Output_Image/building_edge.jpg
+
+# Separately apply contrast enhancement to a car photo
+# Note: contrast() will prompt interactively for percentage
+contrast_obj = imageEdit("Input_Image/car.jpeg", "Output_Image/")
+contrast_obj.loadImg()
+contrast_obj.contrast()
+contrast_obj.writeImg("contrast")
+# → Output_Image/car_contrast.jpeg
+
+# Create a transparent PNG from a logo
+# Note: source must be PNG to preserve the alpha channel in the output
+alpha_obj = imageEdit("Input_Image/logo.png", "Output_Image/")
+alpha_obj.loadImg()
+alpha_obj.transparency()
+alpha_obj.writeImg("transparent")
+# → Output_Image/logo_transparent.png
+```

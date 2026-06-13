@@ -1,0 +1,117 @@
+---
+title: "Configuring Image Transformation: Paths, Formats, and Dependencies"
+sidebarTitle: "Configuration"
+description: "Learn how Image Transformation is configured through CLI arguments and interactive prompts, with guidance on supported image formats and dependencies."
+---
+
+Image Transformation has no configuration file. Every setting — the input image, the output directory, and any command-specific parameter — is either passed directly on the command line or entered at an interactive prompt at runtime. This keeps the tool lightweight and self-contained: there is nothing to set up beyond installing dependencies and pointing the CLI at your images.
+
+## CLI Arguments
+
+Every invocation follows the same three-argument pattern:
+
+```bash
+python main.py <command> <src> <dest>
+```
+
+Providing fewer or more than three arguments (after `main.py`) prints `"Missing Arguments. Run 'python main.py --help'"` and exits immediately.
+
+### Input path (`src`)
+
+The `src` argument is the path to the source image file. Internally, the tool resolves it to an absolute path via `pathlib.Path.resolve()` and then reads it with `matplotlib.image.imread()`. Any format that Matplotlib can read — primarily JPEG and PNG — is supported.
+
+### Output directory (`dest`)
+
+The `dest` argument is the path to the directory where the transformed image will be saved. The tool constructs the output filename automatically (see [Output File Naming](#output-file-naming)) and writes it into this directory.
+
+<Warning>
+  The destination directory must already exist before you run the command. Image Transformation does not create intermediate directories. If the path does not exist, `matplotlib.image.imsave()` will raise a `FileNotFoundError`. Create the directory first with `mkdir -p Output_Image/` (Linux/macOS) or `mkdir Output_Image` (Windows).
+</Warning>
+
+## Output File Naming
+
+Output files are named automatically using the pattern:
+
+```
+<stem>_<suffix><extension>
+```
+
+Where `<stem>` is the original filename without its extension and `<extension>` is the original file extension preserved unchanged. The `<suffix>` is determined by the command you run:
+
+| Command | Suffix | Example output |
+|---|---|---|
+| `detect-edges` | `_edge` | `mountains_edge.jpg` |
+| `grayscale` | `_grayscale` | `mountains_grayscale.jpg` |
+| `upscale` | `_upscaled` | `peslogo_upscaled.jpg` |
+| `downscale` | `_downscaled` | `building_downscaled.jpg` |
+| `flip` | `_flipped` | `mountains_flipped.jpg` |
+| `rotate` | `_rotated_<angle>` | `building_rotated_45.jpg` |
+| `invert-color` | `_negative` | `Who-are-the-hackers_negative.jpg` |
+| `contrast` | `_contrast` | `car_contrast.jpeg` |
+| `rgb-channels` | `_channel_<composition>` | `mountains_channel_rg.jpg` |
+| `transparency` | `_transparency<percentage>` | `peslogo_transparency40.0.jpg` |
+
+For `rotate`, the angle you enter at the prompt is embedded in the filename (e.g. entering `45` produces `_rotated_45`). For `rgb-channels`, the composition string you enter (e.g. `rg`) is appended verbatim. For `transparency`, the float value of the percentage is appended (e.g. entering `40` produces `_transparency40.0`).
+
+## Interactive Prompts
+
+Several commands require additional input that is requested at runtime after the CLI arguments are parsed. You cannot pass these values as CLI flags — you must type them when prompted:
+
+| Command | Prompt text | Expected input |
+|---|---|---|
+| `upscale` | `Enter scaling factor:` | Integer (e.g. `2`) |
+| `downscale` | `Enter downscale factor:` | Integer (e.g. `2`) |
+| `rotate` | `Enter angle in degrees:` | Integer (e.g. `45`) |
+| `contrast` | `Enter contrast percentage:` | Integer (e.g. `80`) |
+| `rgb-channels` | `Enter channel composition:` | String of `r`, `g`, `b` in order (e.g. `rg`) |
+| `transparency` | `Enter transparency percentage:` | Float (e.g. `40`) |
+
+## Image Format Considerations
+
+Image Transformation reads and writes images using `matplotlib.image.imread` and `matplotlib.image.imsave`. The two formats you will encounter most often are JPEG and PNG, and they have different characteristics that affect certain commands.
+
+<Note>
+  JPEG does not support an alpha (transparency) channel. If you run the `transparency` command on a JPEG source image, the alpha channel that the tool writes into the output array will be silently discarded when Matplotlib saves the file as JPEG. The output image will appear fully opaque regardless of the percentage you enter.
+</Note>
+
+<Tip>
+  Use PNG for both input and output when working with the `transparency` command. PNG supports lossless compression and a full alpha channel, so the transparency you set will be preserved correctly in the saved file. If your source image is a JPEG, consider converting it to PNG first before applying transparency.
+</Tip>
+
+A quick reference for format selection:
+
+| Format | Compression | Alpha channel | Best for |
+|---|---|---|---|
+| JPEG (`.jpg`, `.jpeg`) | Lossy | ✗ Not supported | Photos, color operations, geometric transforms |
+| PNG (`.png`) | Lossless | ✓ Supported | Transparency, logos, graphics with sharp edges |
+
+## Dependencies
+
+Image Transformation is a pure-Python project. All dependencies are listed in `requirements.txt` and are installed into a virtual environment by the setup scripts. The pinned versions as shipped are:
+
+| Package | Version | Role |
+|---|---|---|
+| `numpy` | 1.22.3 | All pixel-level array math (Sobel filters, channel isolation, rotation, scaling) |
+| `matplotlib` | 3.5.1 | Image I/O (`mpimg.imread`, `mpimg.imsave`) and optional display (`plt.show`) |
+| `Pillow` | 9.1.0 | Pulled in as a Matplotlib backend dependency for additional image format support |
+| `cycler` | 0.11.0 | Matplotlib dependency |
+| `fonttools` | 4.32.0 | Matplotlib dependency |
+| `kiwisolver` | 1.4.2 | Matplotlib dependency |
+| `packaging` | 21.3 | Matplotlib dependency |
+| `pyparsing` | 3.0.8 | Matplotlib dependency |
+| `python-dateutil` | 2.8.2 | Matplotlib dependency |
+| `six` | 1.16.0 | Matplotlib dependency |
+
+### Python Version
+
+Image Transformation requires **Python 3.8 or later**. The codebase uses f-strings (Python 3.6+) and `pathlib.Path` (Python 3.4+), and the setup scripts call `python3` on Linux/macOS and `python` on Windows.
+
+## Platform Notes
+
+After saving the output image, the CLI runs:
+
+```python
+os.system(f"start {dest}")
+```
+
+On **Windows**, `start` is a built-in shell command that opens the destination folder in File Explorer. On **Linux and macOS**, `start` is not a system command, so this call is effectively a no-op — the image is saved correctly, but the folder does not open automatically. Open the output directory manually with your file manager or image viewer.

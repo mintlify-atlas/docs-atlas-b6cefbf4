@@ -1,0 +1,157 @@
+---
+title: "Color Transformation Commands: Grayscale, Edges, Contrast"
+sidebarTitle: "Color Transforms"
+description: "Reference for grayscale, detect-edges, invert-color, contrast, rgb-channels, and transparency CLI commands with examples and output naming."
+---
+
+The color transformation commands operate entirely on pixel values — none of them change the spatial layout or dimensions of your image. They range from simple conversions like grayscale and color inversion to more involved operations like Sobel-based edge detection, percentile contrast enhancement, selective RGB channel isolation, and alpha-channel transparency. Each command follows the standard `python main.py <command> <src> <dest>` syntax, and some pause mid-execution to collect an additional parameter from you interactively.
+
+---
+
+## grayscale
+
+The `grayscale` command converts a colour image to grayscale by computing a luminosity-weighted average of the three colour channels for every pixel. The weighting — **R × 0.299 + G × 0.587 + B × 0.114** — matches the ITU-R BT.601 standard and more closely reflects how the human eye perceives brightness than a simple arithmetic mean would.
+
+- **Interactive prompt:** none
+- **Output suffix:** `_grayscale`
+
+**Example**
+
+```bash
+python main.py grayscale Input_Image/mountains.jpg Output_Image/
+```
+
+Output file: `mountains_grayscale.jpg`
+
+---
+
+## detect-edges
+
+The `detect-edges` command highlights structural boundaries in an image by applying vertical and horizontal Sobel filters to a grayscale version of the source. For each pixel a 3 × 3 neighbourhood is convolved with each filter to produce a vertical score and a horizontal score. The final edge score is computed as:
+
+```
+edge_score = sqrt(vertical_score² + horizontal_score²)
+```
+
+The resulting edge map is then normalised to the range **[0, 1]** by dividing every value by the maximum score in the image, so the output is always a consistent floating-point array regardless of the input image's intensity range.
+
+- **Interactive prompt:** none
+- **Output suffix:** `_edge`
+
+**Example**
+
+```bash
+python main.py detect-edges Input_Image/building.jpg Output_Image/
+```
+
+Output file: `building_edge.jpg`
+
+---
+
+## invert-color
+
+The `invert-color` command produces a photographic negative of the source image by applying a bitwise NOT (`~array`) to every element of the pixel array. For an 8-bit image this flips each channel value `v` to `255 - v`, turning light areas dark and vice versa.
+
+- **Interactive prompt:** none
+- **Output suffix:** `_negative`
+
+**Example**
+
+```bash
+python main.py invert-color Input_Image/Who-are-the-hackers.jpg Output_Image/
+```
+
+Output file: `Who-are-the-hackers_negative.jpg`
+
+---
+
+## contrast
+
+The `contrast` command enhances the perceived contrast of an image using percentile clipping followed by linear rescaling. The process works in three steps:
+
+1. The 2nd and 98th percentile pixel values of the image are calculated, clipping extreme outliers.
+2. All pixel values are clamped to that range with `np.clip()`.
+3. The clamped values are linearly rescaled to a new maximum defined by your percentage input:
+
+```
+multiplier = int(percentage / 100 × 255)
+```
+
+So a percentage of `80` maps the clipped range to `[0, 204]`.
+
+- **Interactive prompt:** `Enter contrast percentage:` — enter an integer (e.g., `80`)
+- **Output suffix:** `_contrast`
+
+**Example**
+
+```bash
+python main.py contrast Input_Image/car.jpeg Output_Image/
+```
+
+When prompted, enter your desired percentage:
+
+```bash
+Enter contrast percentage: 80
+```
+
+Output file: `car_contrast.jpeg`
+
+---
+
+## rgb-channels
+
+The `rgb-channels` command isolates one or more colour channels from the image, zeroing out all channels that are not requested. You can request any single channel (`r`, `g`, or `b`) or any combination (`rg`, `rb`, `gb`, `rgb`). The output is still a three-channel image — unrequested channels are simply filled with zeros.
+
+<Note>
+The input is validated against the regular expression `^r?g?b?$`. Any string that contains characters other than `r`, `g`, and `b` — or that arranges them out of order — will be rejected and you will be re-prompted until a valid composition is entered.
+</Note>
+
+- **Interactive prompt:** `Enter channel composition:` — e.g., `r`, `gb`, `rgb`
+- **Output suffix:** `_channel_<composition>`
+
+**Example**
+
+```bash
+python main.py rgb-channels Input_Image/mountains.jpg Output_Image/
+```
+
+When prompted, enter your desired channel combination:
+
+```bash
+Enter channel composition: rg
+```
+
+Output file: `mountains_channel_rg.jpg`
+
+---
+
+## transparency
+
+The `transparency` command converts the image to RGBA format and applies a uniform alpha (opacity) value to every pixel. You supply a **transparency percentage** — the fraction of opacity that will be *removed*. Internally, the alpha value is calculated as:
+
+```
+multiplier = int((100 - percentage) / 100 × 255)
+```
+
+So entering `40` means 40 % transparency, leaving the image at 60 % opacity and producing an alpha value of `153` out of 255.
+
+<Warning>
+JPEG does not support an alpha channel. Save your output to a PNG file (use a `.png` destination path) to preserve transparency. If you save the result as a JPEG the alpha channel will be discarded and the transparent areas will appear as solid colour.
+</Warning>
+
+- **Interactive prompt:** `Enter transparency percentage:` — float (e.g., `40`)
+- **Output suffix:** `_transparency<percentage>`
+
+**Example**
+
+```bash
+python main.py transparency Input_Image/peslogo.jpg Output_Image/
+```
+
+When prompted, enter the transparency level:
+
+```bash
+Enter transparency percentage: 40
+```
+
+Output file: `peslogo_transparency40.0.jpg`

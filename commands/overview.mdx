@@ -1,0 +1,82 @@
+---
+title: "Image Transformation CLI Command Overview"
+sidebarTitle: "Overview"
+description: "Complete reference for all 10 Image Transformation CLI commands — syntax, required arguments, interactive prompts, and output file naming."
+---
+
+The Image Transformation CLI is a pure-Python tool that applies a range of image processing operations directly from your terminal. Every command follows the same three-argument pattern — you supply the command name, the path to your source image, and the directory where you want the result saved. Under the hood each operation is powered by NumPy array manipulations and Matplotlib's image I/O, so no external image-processing library is required.
+
+## General Syntax
+
+```bash
+python main.py <command> <src> <dest>
+```
+
+| Argument | Description |
+|----------|-------------|
+| `<command>` | One of the 10 subcommands listed below |
+| `<src>` | Path to the input image file (JPEG and PNG are supported) |
+| `<dest>` | Path to the output directory where the result will be saved |
+
+All three arguments are required. Passing fewer than three arguments (excluding the command name) prints an error message directing you to `--help`.
+
+### Getting Help
+
+Run either of the following to print the full usage reference in your terminal:
+
+```bash
+python main.py --help
+python main.py -h
+```
+
+### Output File Naming
+
+The CLI automatically derives the output filename from the source image. The pattern is:
+
+```
+<stem>_<suffix><extension>
+```
+
+For example, running `grayscale` on `mountains.jpg` produces `mountains_grayscale.jpg` in your chosen output directory. Commands that accept an interactive parameter (such as `rotate`) embed that value in the suffix (e.g., `mountains_rotated_45.jpg`).
+
+<Note>
+Several commands pause after loading the image and prompt you to enter a parameter interactively — for example a scaling factor, an angle, or a contrast percentage. The table below marks each such command in the **Interactive Prompt** column. You must press **Enter** to confirm your value before the transformation runs.
+</Note>
+
+## Command Summary
+
+Commands are grouped into two categories: **Color Operations**, which alter pixel values without changing image geometry, and **Geometric Operations**, which reposition or resize pixels in space.
+
+### Color Operations
+
+| Command | Description | Interactive Prompt | Output Suffix |
+|---|---|---|---|
+| `grayscale` | Converts the image to grayscale using luminosity weighting | — | `_grayscale` |
+| `detect-edges` | Detects edges via vertical and horizontal Sobel filters | — | `_edge` |
+| `invert-color` | Inverts all pixel values to produce a photographic negative | — | `_negative` |
+| `contrast` | Enhances contrast by percentile clipping and linear rescaling | `Enter contrast percentage:` | `_contrast` |
+| `rgb-channels` | Isolates one or more RGB channels from the image | `Enter channel composition:` | `_channel_<composition>` |
+| `transparency` | Adds an alpha channel and sets a uniform opacity level | `Enter transparency percentage:` | `_transparency<percentage>` |
+
+### Geometric Operations
+
+| Command | Description | Interactive Prompt | Output Suffix |
+|---|---|---|---|
+| `flip` | Mirrors the image horizontally | — | `_flipped` |
+| `rotate` | Rotates the image by an arbitrary integer angle | `Enter angle in degrees:` | `_rotated_<angle>` |
+| `upscale` | Enlarges the image by repeating pixels | `Enter scaling factor:` | `_upscaled` |
+| `downscale` | Reduces the image by sampling every n-th pixel | `Enter downscale factor:` | `_downscaled` |
+
+## Explore by Category
+
+<CardGroup cols={2}>
+  <Card title="Color Transforms" icon="palette" href="/commands/color-transforms">
+    Grayscale, edge detection, invert, contrast, RGB channels, and transparency commands.
+  </Card>
+  <Card title="Geometric Transforms" icon="arrows-rotate" href="/commands/geometric-transforms">
+    Flip and rotate commands for mirroring and arbitrary-angle rotation.
+  </Card>
+  <Card title="Scaling" icon="magnifying-glass" href="/commands/scaling">
+    Upscale and downscale commands for enlarging or reducing image dimensions.
+  </Card>
+</CardGroup>

@@ -1,47 +1,172 @@
 ---
-title: "Quickstart"
-description: "Begin with a guide on the fastest path to a successful outcome"
+title: "Get Started with Image Transformation in 3 Steps"
+sidebarTitle: "Quickstart"
+description: "Transform your first image using Image Transformation's CLI in under two minutes — from cloning the repo to saving the processed output."
 ---
 
-Describe how someone begins using your product. What is the first thing they need to do? Are there any prerequisites?
+This guide assumes you have already installed Image Transformation and have an active virtual environment. If you have not done that yet, complete the [Installation guide](/installation) first, then come back here. All examples below use the sample images that ship inside the `Input_Image/` directory of the repository, so you can run every command exactly as written without needing your own image files.
 
-A quickstart should take someone from zero to using your product. They'll get a quick win and a sense of what they can accomplish.
+## CLI Syntax
 
-## Prerequisites
+Every Image Transformation command follows the same three-argument pattern:
 
-Before you begin, you must have:
+```bash
+python main.py <command> <src> <dest>
+```
 
-- Requirement one (for example, Node.js 18+, a free account, an API key)
-- Requirement two (for example, a compatible device, a compatible browser, a compatible operating system)
+- **`<command>`** — one of the ten transformation subcommands (see the table in the Introduction)
+- **`<src>`** — full or relative path to the source image file (JPEG, PNG, etc.)
+- **`<dest>`** — path to the output **directory** where the processed image will be saved
 
-## Get started
+The output filename is constructed automatically as `<original-stem>_<suffix><original-extension>`. For example, running `grayscale` on `mountains.jpg` produces `mountains_grayscale.jpg` in the destination directory.
+
+<Note>
+  Six commands — `upscale`, `downscale`, `rotate`, `contrast`, `rgb-channels`, and `transparency` — pause after you run them and prompt you to enter an additional parameter interactively (a scale factor, rotation angle, contrast percentage, channel string, or transparency percentage). The other four commands (`detect-edges`, `grayscale`, `flip`, `invert-color`) run to completion without any further input.
+</Note>
+
+---
+
+## Quickstart Walkthrough
 
 <Steps>
-  <Step title="Install">
-    Describe how to install your product or sign up.
+
+  <Step title="Convert a photo to grayscale">
+    The `grayscale` command uses the luminosity formula (R×0.299 + G×0.587 + B×0.114) to convert a colour image to a perceptually-weighted grayscale representation. It requires no additional input.
 
     ```bash
-    npm install your-package
+    python main.py grayscale Input_Image/mountains.jpg Output_Image/
     ```
+
+    **Expected terminal output:**
+
+    ```
+    Converting image to grayscale
+    Saving image
+    Done
+    ```
+
+    **Output file:** `Output_Image/mountains_grayscale.jpg`
+
+    <Tip>
+      Make sure the `Output_Image/` directory exists before running any command, or replace it with any existing directory path on your system.
+    </Tip>
   </Step>
-  <Step title="Configure">
-    Describe any setup or configuration needed before first use.
+
+  <Step title="Run edge detection on a photo">
+    The `detect-edges` command applies vertical and horizontal Sobel convolution kernels to identify edges in the image. Like `grayscale`, it runs entirely non-interactively.
 
     ```bash
-    your-cli init
+    python main.py detect-edges Input_Image/building.jpg Output_Image/
     ```
+
+    **Expected terminal output:**
+
+    ```
+    Detecting edges on image
+    Saving image
+    Done
+    ```
+
+    **Output file:** `Output_Image/building_edge.jpg`
+
+    The algorithm internally calls `grayscale()` first, then applies the Sobel kernels to the single-channel result. Edge scores are normalised to the `[0, 1]` range before saving.
   </Step>
-  <Step title="Run it">
-    Show the first thing a user does to see it working.
+
+  <Step title="Flip an image horizontally">
+    The `flip` command mirrors the image left-to-right using NumPy's `fliplr`. No parameters needed.
 
     ```bash
-    your-cli start
+    python main.py flip Input_Image/car.jpeg Output_Image/
     ```
+
+    **Expected terminal output:**
+
+    ```
+    Flipping image
+    Saving image
+    Done
+    ```
+
+    **Output file:** `Output_Image/car_flipped.jpeg`
   </Step>
+
 </Steps>
 
-<Tip>
-  Give people a way to get help. This could be a link to a support page, a chat with a customer support agent, or a forum for your product.
+---
 
-  Example: Need help? Reach out to us at [support@yourcompany.com](mailto:support@yourcompany.com).
-</Tip>
+## Output Filename Reference
+
+The output filename is always built from the source file's stem plus a fixed suffix:
+
+| Command | Suffix appended | Example output filename |
+|---|---|---|
+| `detect-edges` | `_edge` | `building_edge.jpg` |
+| `grayscale` | `_grayscale` | `mountains_grayscale.jpg` |
+| `upscale` | `_upscaled` | `mountains_upscaled.jpg` |
+| `downscale` | `_downscaled` | `mountains_downscaled.jpg` |
+| `flip` | `_flipped` | `car_flipped.jpeg` |
+| `rotate` | `_rotated_<angle>` | `car_rotated_90.jpeg` |
+| `invert-color` | `_negative` | `building_negative.jpg` |
+| `contrast` | `_contrast` | `mountains_contrast.jpg` |
+| `rgb-channels` | `_channel_<channels>` | `mountains_channel_rg.jpg` |
+| `transparency` | `_transparency<percentage>` | `mountains_transparency50.0.jpg` |
+
+---
+
+## The `--help` Output
+
+Run `python main.py --help` (or `python main.py -h`, or `python main.py` with no arguments) to see the full usage reference at any time:
+
+```
+Usage:
+    python main.py <Option> src dest
+    
+Option:
+    --help      -h      Loads this message
+    detect-edges        Perform edge detection on given image
+    grayscale           Convert image to grayscale
+    upscale             Upscale image
+    downscale           Downscale image
+    flip                Flips the image
+    rotate              Rotate image by given angle
+    invert-color        Invert colors of the image
+    contrast            To adjust contrast of image
+    rgb-channels        To obtain image containg only r,g or b or a mixture of those
+    transparency        To add transparency to images
+
+
+src - source of image
+dest - destination location to save image
+```
+
+---
+
+## Interactive Commands: What to Expect
+
+When you run one of the six interactive commands, the program halts and waits for you to type a value. Here is what each prompt looks like and what kind of input is expected:
+
+| Command | Prompt | Expected input |
+|---|---|---|
+| `upscale` | `Enter scaling factor:` | Positive integer (e.g. `2` doubles the resolution) |
+| `downscale` | `Enter downscale factor:` | Positive integer (e.g. `2` halves the resolution) |
+| `rotate` | `Enter angle in degrees:` | Integer angle in degrees (e.g. `90`, `45`, `180`) |
+| `contrast` | `Enter contrast percentage:` | Integer 0–100 (e.g. `80`) |
+| `rgb-channels` | `Enter channel composition:` | Any combination of `r`, `g`, `b` (e.g. `rg`, `b`, `rgb`) |
+| `transparency` | `Enter transparency percentage:` | Float 0–100 (e.g. `50.0` gives 50% opacity) |
+
+<Warning>
+  Entering a value outside the expected range (for example, a non-integer for `upscale`, or an invalid string for `rgb-channels`) will cause an error. The `rgb-channels` command will re-prompt until a valid combination of `r`, `g`, and `b` is entered.
+</Warning>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Command Reference" icon="terminal" href="/commands/overview">
+    Detailed documentation for every subcommand — arguments, interactive prompts, output naming, and edge cases.
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/imageedit-class">
+    Explore the `imageEdit` class internals, method signatures, and the NumPy algorithms behind each transformation.
+  </Card>
+</CardGroup>

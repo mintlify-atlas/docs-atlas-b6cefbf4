@@ -1,0 +1,83 @@
+---
+title: "Image Transformation: Zero-dependency Python Image Processing"
+sidebarTitle: "Introduction"
+description: "Image Transformation is a pure-Python CLI tool that applies 10 image operations using only NumPy and Matplotlib — no OpenCV required."
+---
+
+Image Transformation is a command-line tool that performs ten distinct image processing operations entirely from scratch in Python. Rather than delegating work to a heavy computer-vision library like OpenCV, every algorithm — from Sobel edge detection to pixel-level color inversion — is implemented directly using NumPy array operations and Matplotlib's image I/O. This makes the project an ideal reference for understanding how image transformations actually work under the hood, and a lightweight utility for anyone who wants to process images without adding large binary dependencies to their environment.
+
+## Why Image Transformation?
+
+Most image processing workflows reach for OpenCV or Pillow as a first instinct. Image Transformation deliberately avoids that path. The algorithms are transparent, readable Python, so you can study the Sobel convolution kernel, the luminosity-weighted grayscale formula, or the rotation matrix math directly in the source code. The only runtime dependencies are **NumPy** and **Matplotlib** — both general-purpose scientific Python libraries already present in most data-science environments.
+
+- **Zero heavy dependencies** — no OpenCV, no compiled C extensions beyond NumPy itself
+- **Transparent algorithms** — every transformation is pure Python/NumPy you can read and modify
+- **Single command interface** — all ten operations share the same `python main.py <command> <src> <dest>` pattern
+- **Cross-platform** — ships with setup scripts for Linux, macOS, and Windows
+- **BSD-2-Clause licensed** — permissive license, free to use and adapt
+
+## Available Transformations
+
+Image Transformation exposes ten subcommands, each applying a distinct operation to the source image:
+
+| Command | What it does |
+|---|---|
+| `detect-edges` | Applies Sobel convolution kernels (vertical + horizontal) to detect image edges |
+| `grayscale` | Converts to grayscale using the luminosity formula (R×0.299 + G×0.587 + B×0.114) |
+| `upscale` | Repeats pixels along both axes by a given integer factor |
+| `downscale` | Samples every _n_-th pixel along both axes to reduce dimensions |
+| `flip` | Mirrors the image horizontally (left-right flip) |
+| `rotate` | Rotates by an arbitrary angle in degrees using a rotation matrix |
+| `invert-color` | Produces a photographic negative by bitwise-inverting every channel |
+| `contrast` | Clips to the 2nd–98th percentile range and rescales to a user-specified percentage |
+| `rgb-channels` | Isolates any combination of R, G, and B channels, zeroing the others |
+| `transparency` | Adds an alpha channel at a user-specified opacity percentage |
+
+<Note>
+  Several commands — `upscale`, `downscale`, `rotate`, `contrast`, `rgb-channels`, and `transparency` — prompt you interactively for an additional parameter (such as a scale factor, angle, or percentage) after the command is run. Have your desired value ready before invoking the command.
+</Note>
+
+## Project Structure
+
+The project is intentionally small and easy to navigate:
+
+```
+Image-Transformation/
+├── main.py              # CLI entry point — parses sys.argv and dispatches commands
+├── src/
+│   ├── imageEdit.py     # Core imageEdit class — all transformation logic lives here
+│   └── usage.py         # Help text returned by --help / -h
+├── Input_Image/         # Sample input images (mountains.jpg, building.jpg, car.jpeg, …)
+├── Output_Image/        # Default destination for processed images
+├── requirements.txt     # NumPy + Matplotlib + supporting packages
+├── setup.sh             # Linux/macOS: creates venv and installs requirements
+├── setup.ps1            # Windows: PowerShell equivalent of setup.sh
+└── activate.ps1         # Windows: shortcut to activate the virtual environment
+```
+
+- **`main.py`** reads `sys.argv`, validates argument count, and calls the appropriate method on an `imageEdit` instance.
+- **`src/imageEdit.py`** contains the `imageEdit` class with `loadImg()`, `writeImg()`, and one method per transformation.
+- **`src/usage.py`** exports a single `inf()` function that returns the formatted help string printed by `--help`.
+
+## License
+
+Image Transformation is released under the **BSD-2-Clause License** © 2022 Adarsh Kumar. You are free to use, modify, and redistribute it with or without modification as long as the original copyright notice is retained.
+
+---
+
+## Explore the Docs
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="wrench" href="/installation">
+    Set up your virtual environment and install dependencies on Linux, macOS, or Windows.
+  </Card>
+  <Card title="Quickstart" icon="bolt" href="/quickstart">
+    Transform your first image in under two minutes with three concrete examples.
+  </Card>
+  <Card title="Command Reference" icon="terminal" href="/commands/overview">
+    Full reference for all ten subcommands, their arguments, and output file naming.
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/imageedit-class">
+    Browse the `imageEdit` class methods, parameters, and NumPy implementation details.
+  </Card>
+</CardGroup>

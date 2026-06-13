@@ -1,0 +1,250 @@
+---
+title: "Image Transformation Examples: Real-World Workflows"
+sidebarTitle: "Examples"
+description: "Step-by-step worked examples for every Image Transformation command, using the sample images bundled in the repository to show real outputs."
+---
+
+The following examples walk through every command in Image Transformation using the sample images bundled in the `Input_Image/` directory of the repository. Each example shows the exact command to run, any interactive prompts you will encounter, and the name of the output file that will appear in `Output_Image/`. Make sure you have activated your virtual environment and that the `Output_Image/` directory already exists before running any command.
+
+<Note>
+  Commands that require a scaling factor, angle, percentage, or channel composition cannot be driven non-interactively — they always pause and wait for keyboard input. These are: `upscale`, `downscale`, `rotate`, `contrast`, `rgb-channels`, and `transparency`.
+</Note>
+
+## Color Operations
+
+### Grayscale Conversion
+
+Convert `mountains.jpg` to a luminance-weighted grayscale image. The tool applies the ITU-R BT.601 weighting (R × 0.299, G × 0.587, B × 0.114) to each pixel.
+
+```bash
+python main.py grayscale Input_Image/mountains.jpg Output_Image/
+# Output: Output_Image/mountains_grayscale.jpg
+```
+
+### Edge Detection
+
+Detect edges in `building.jpg` using a Sobel filter. The image is first converted to grayscale internally, then both horizontal and vertical gradients are computed and combined.
+
+```bash
+python main.py detect-edges Input_Image/building.jpg Output_Image/
+# Output: Output_Image/building_edge.jpg
+```
+
+### Invert Colors (Negative)
+
+Produce a photographic negative of `Who-are-the-hackers.jpg` by flipping every channel value with a bitwise NOT (`~`).
+
+```bash
+python main.py invert-color Input_Image/Who-are-the-hackers.jpg Output_Image/
+# Output: Output_Image/Who-are-the-hackers_negative.jpg
+```
+
+### Contrast Enhancement
+
+Stretch the pixel value range of `car.jpeg` by clipping to the 2nd–98th percentile and remapping to a 0–`multiplier` range. The multiplier is derived from the percentage you enter.
+
+<Steps>
+  <Step title="Run the command">
+    ```bash
+    python main.py contrast Input_Image/car.jpeg Output_Image/
+    ```
+  </Step>
+  <Step title="Enter the contrast percentage at the prompt">
+    ```
+    Enter contrast percentage: 80
+    ```
+    Entering `80` maps the stretched values onto a 0–204 range (80% of 255).
+  </Step>
+  <Step title="Collect your output">
+    ```
+    # Output: Output_Image/car_contrast.jpeg
+    ```
+  </Step>
+</Steps>
+
+### RGB Channel Isolation
+
+Zero out one or more colour channels in `mountains.jpg`, keeping only the channels you specify. For example, entering `rg` retains the red and green channels while zeroing blue — producing a yellow-toned result.
+
+<Steps>
+  <Step title="Run the command">
+    ```bash
+    python main.py rgb-channels Input_Image/mountains.jpg Output_Image/
+    ```
+  </Step>
+  <Step title="Enter the channel composition at the prompt">
+    ```
+    Input should be a combination of r g and b
+    Enter channel composition: rg
+    ```
+    Valid values are any combination of `r`, `g`, and `b` written in that order: `r`, `g`, `b`, `rg`, `rb`, `gb`, or `rgb`. Uppercase letters and spaces are rejected and will re-prompt.
+  </Step>
+  <Step title="Collect your output">
+    ```
+    # Output: Output_Image/mountains_channel_rg.jpg
+    ```
+  </Step>
+</Steps>
+
+### Transparency
+
+Add an alpha channel to `peslogo.jpg` by setting each pixel's opacity to `(100 - percentage) / 100 × 255`. Entering `40` means 40% transparent, so 60% opaque.
+
+<Steps>
+  <Step title="Run the command">
+    ```bash
+    python main.py transparency Input_Image/peslogo.jpg Output_Image/
+    ```
+  </Step>
+  <Step title="Enter the transparency percentage at the prompt">
+    ```
+    Enter transparency percentage: 40
+    ```
+  </Step>
+  <Step title="Collect your output">
+    ```
+    # Output: Output_Image/peslogo_transparency40.0.jpg
+    ```
+  </Step>
+</Steps>
+
+<Tip>
+  Because `peslogo.jpg` is a JPEG, the alpha channel written by the tool will be discarded when Matplotlib saves the file back as JPEG. To preserve transparency, use a PNG source image and ensure the output path (derived from the source filename) also has a `.png` extension. See [Image Format Considerations](/guides/configuration#image-format-considerations) for details.
+</Tip>
+
+---
+
+## Geometric Operations
+
+### Horizontal Flip
+
+Mirror `mountains.jpg` left-to-right using NumPy's `np.fliplr()`.
+
+```bash
+python main.py flip Input_Image/mountains.jpg Output_Image/
+# Output: Output_Image/mountains_flipped.jpg
+```
+
+### Rotation
+
+Rotate `building.jpg` by an arbitrary angle. The output canvas is automatically expanded to fit the full rotated image, and any unfilled pixels are set to black (zero).
+
+<Steps>
+  <Step title="Run the command">
+    ```bash
+    python main.py rotate Input_Image/building.jpg Output_Image/
+    ```
+  </Step>
+  <Step title="Enter the rotation angle at the prompt">
+    ```
+    Enter angle in degrees: 45
+    ```
+    The angle must be an integer. The rotation is counter-clockwise.
+  </Step>
+  <Step title="Collect your output">
+    ```
+    # Output: Output_Image/building_rotated_45.jpg
+    ```
+  </Step>
+</Steps>
+
+---
+
+## Scaling Operations
+
+### Upscale
+
+Enlarge `peslogo.jpg` by repeating each pixel along both axes (`np.repeat`). Entering `2` doubles the width and height.
+
+<Steps>
+  <Step title="Run the command">
+    ```bash
+    python main.py upscale Input_Image/peslogo.jpg Output_Image/
+    ```
+  </Step>
+  <Step title="Enter the scaling factor at the prompt">
+    ```
+    Enter scaling factor: 2
+    ```
+    The factor must be a positive integer. A factor of `3` triples each dimension.
+  </Step>
+  <Step title="Collect your output">
+    ```
+    # Output: Output_Image/peslogo_upscaled.jpg
+    ```
+  </Step>
+</Steps>
+
+### Downscale
+
+Shrink `building.jpg` by sampling every Nth pixel along both axes. Entering `2` halves the width and height.
+
+<Steps>
+  <Step title="Run the command">
+    ```bash
+    python main.py downscale Input_Image/building.jpg Output_Image/
+    ```
+  </Step>
+  <Step title="Enter the downscale factor at the prompt">
+    ```
+    Enter downscale factor: 2
+    ```
+    The factor must be a positive integer greater than 1.
+  </Step>
+  <Step title="Collect your output">
+    ```
+    # Output: Output_Image/building_downscaled.jpg
+    ```
+  </Step>
+</Steps>
+
+---
+
+## Using the Python API Directly
+
+<Accordion title="Applying multiple transformations via the Python API">
+
+You can import the `imageEdit` class directly and chain operations in a script without going through the CLI. This is useful when you want to process many images in a loop or apply several transformations to the same source file.
+
+The example below applies grayscale and edge detection to `mountains.jpg`, saving each result as a separate file:
+
+```python
+from src.imageEdit import imageEdit
+
+# Grayscale conversion
+gray = imageEdit("Input_Image/mountains.jpg", "Output_Image/")
+gray.loadImg()
+gray.grayscale()
+gray.writeImg("grayscale")
+# Saves: Output_Image/mountains_grayscale.jpg
+
+# Edge detection (use a fresh object — writeImg mutates self.dest)
+edges = imageEdit("Input_Image/mountains.jpg", "Output_Image/")
+edges.loadImg()
+edges.edgeDetection()
+edges.writeImg("edge")
+# Saves: Output_Image/mountains_edge.jpg
+```
+
+<Tip>
+  Always create a separate `imageEdit` object for each output file. The `writeImg()` method mutates `self.dest` in place — it appends the filename to the destination path, so calling it twice on the same object would produce an incorrect path on the second call.
+</Tip>
+
+The same pattern applies to any other method. For example, to upscale programmatically without an interactive prompt, you can set the internal state directly:
+
+```python
+from src.imageEdit import imageEdit
+
+obj = imageEdit("Input_Image/peslogo.jpg", "Output_Image/")
+obj.loadImg()
+
+# Replicate what upscale() does, but without the input() call
+import numpy as np
+f = 3  # 3× upscale
+obj.outp = obj.inp.repeat(f, axis=0).repeat(f, axis=1)
+
+obj.writeImg("upscaled")
+# Saves: Output_Image/peslogo_upscaled.jpg
+```
+
+</Accordion>

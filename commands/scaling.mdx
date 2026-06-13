@@ -1,0 +1,87 @@
+---
+title: "Image Scaling Commands: Upscale and Downscale"
+sidebarTitle: "Scaling"
+description: "Reference for the upscale and downscale CLI commands — enlarge or reduce images by integer factors using pixel repetition and sampling."
+---
+
+The scaling commands let you change the physical dimensions of an image directly from the terminal. `upscale` enlarges an image by repeating each pixel a fixed number of times in both axes, while `downscale` reduces it by sampling every n-th pixel. Both commands prompt you for an integer factor after loading the source file and follow the standard `python main.py <command> <src> <dest>` syntax. For more granular control — including non-uniform width and height factors — the underlying `resize()` method is available in the Python API but is not exposed as a CLI command.
+
+---
+
+## upscale
+
+The `upscale` command enlarges an image by a uniform integer factor `f`. Each pixel is repeated `f` times along both the horizontal and vertical axes using `np.repeat()`, so a factor of `2` doubles both the width and the height, and a factor of `3` triples them. The operation preserves every original pixel value exactly — no interpolation is applied.
+
+<Note>
+Only **integer** factors are accepted. Passing a decimal value (e.g., `1.5`) will raise a `ValueError` because the implementation calls `int()` on your input.
+</Note>
+
+- **Interactive prompt:** `Enter scaling factor:` — integer (e.g., `2`)
+- **Output suffix:** `_upscaled`
+
+**Example**
+
+```bash
+python main.py upscale Input_Image/peslogo.jpg Output_Image/
+```
+
+When prompted, enter the scaling factor:
+
+```bash
+Enter scaling factor: 2
+```
+
+Output file: `peslogo_upscaled.jpg`
+
+The output image will be exactly twice the width and twice the height of the source.
+
+---
+
+## downscale
+
+The `downscale` command reduces an image by sampling every `f`-th pixel in both dimensions using the NumPy slice `[::f, ::f]`. A factor of `2` retains every second pixel, halving both dimensions; a factor of `4` retains every fourth pixel, reducing each dimension to one quarter of the original. Pixels that fall between sampled positions are discarded entirely — no averaging or interpolation is performed.
+
+<Note>
+Only **integer** factors are accepted. Passing a decimal value (e.g., `2.5`) will raise a `ValueError` because the implementation calls `int()` on your input.
+</Note>
+
+- **Interactive prompt:** `Enter downscale factor:` — integer (e.g., `2`)
+- **Output suffix:** `_downscaled`
+
+**Example**
+
+```bash
+python main.py downscale Input_Image/building.jpg Output_Image/
+```
+
+When prompted, enter the downscale factor:
+
+```bash
+Enter downscale factor: 2
+```
+
+Output file: `building_downscaled.jpg`
+
+The output image will be exactly half the width and half the height of the source.
+
+---
+
+## Advanced Scaling: the `resize()` API method
+
+The CLI `upscale` and `downscale` commands both apply the same factor to width and height. If you need **non-uniform scaling** — for example, doubling the width while halving the height — the `imageEdit` class exposes a `resize()` method that accepts separate width and height factors:
+
+```bash
+Enter scaling factor for width: <w>
+Enter scaling factor for height: <h>
+```
+
+`resize()` handles all four combinations automatically:
+
+- `w > 1` and `h > 1`: upscale both axes with `np.repeat()`
+- `w > 1` and `h ≤ 1`: upscale width, downscale height
+- `w ≤ 1` and `h > 1`: downscale width, upscale height
+- `w ≤ 1` and `h ≤ 1`: downscale both axes via slice
+
+<Tip>
+`resize()` is not wired to a CLI command and must be called programmatically by importing `imageEdit` in your own Python script. Use it whenever you need independent control over each axis, or when you want to both upscale and downscale in a single pass rather than chaining two separate CLI invocations.
+</Tip>
