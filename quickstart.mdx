@@ -1,5 +1,5 @@
 ---
-title: "Get Started with Image Transformation in 3 Steps"
+title: "Quickstart: Run Your First Image Transformation Command"
 sidebarTitle: "Quickstart"
 description: "Transform your first image using Image Transformation's CLI in under two minutes — from cloning the repo to saving the processed output."
 ---
@@ -39,7 +39,7 @@ The output filename is constructed automatically as `<original-stem>_<suffix><or
 
     **Expected terminal output:**
 
-    ```
+    ```text
     Converting image to grayscale
     Saving image
     Done
@@ -61,7 +61,7 @@ The output filename is constructed automatically as `<original-stem>_<suffix><or
 
     **Expected terminal output:**
 
-    ```
+    ```text
     Detecting edges on image
     Saving image
     Done
@@ -81,7 +81,7 @@ The output filename is constructed automatically as `<original-stem>_<suffix><or
 
     **Expected terminal output:**
 
-    ```
+    ```text
     Flipping image
     Saving image
     Done
@@ -117,7 +117,7 @@ The output filename is always built from the source file's stem plus a fixed suf
 
 Run `python main.py --help` (or `python main.py -h`, or `python main.py` with no arguments) to see the full usage reference at any time:
 
-```
+```text
 Usage:
     python main.py <Option> src dest
     
@@ -151,11 +151,11 @@ When you run one of the six interactive commands, the program halts and waits fo
 | `downscale` | `Enter downscale factor:` | Positive integer (e.g. `2` halves the resolution) |
 | `rotate` | `Enter angle in degrees:` | Integer angle in degrees (e.g. `90`, `45`, `180`) |
 | `contrast` | `Enter contrast percentage:` | Integer 0–100 (e.g. `80`) |
-| `rgb-channels` | `Enter channel composition:` | Any combination of `r`, `g`, `b` (e.g. `rg`, `b`, `rgb`) |
+| `rgb-channels` | `Enter channel composition:` | Letters `r`, `g`, `b` in that order (e.g. `r`, `rg`, `rgb`, `gb`); validated against regex `^r?g?b?$` |
 | `transparency` | `Enter transparency percentage:` | Float 0–100 (e.g. `50.0` gives 50% opacity) |
 
 <Warning>
-  Entering a value outside the expected range (for example, a non-integer for `upscale`, or an invalid string for `rgb-channels`) will cause an error. The `rgb-channels` command will re-prompt until a valid combination of `r`, `g`, and `b` is entered.
+  Entering a value outside the expected type (for example, a non-integer for `upscale`) will raise a Python `ValueError`. For `rgb-channels`, the input is validated against the regex `^r?g?b?$` — letters must appear in the order `r`, then `g`, then `b` (e.g. `rg` is valid; `gr` is not). The command re-prompts until a valid value is entered.
 </Warning>
 
 ---

@@ -27,13 +27,14 @@ Output file: `mountains_grayscale.jpg`
 
 ## detect-edges
 
-The `detect-edges` command highlights structural boundaries in an image by applying vertical and horizontal Sobel filters to a grayscale version of the source. For each pixel a 3 × 3 neighbourhood is convolved with each filter to produce a vertical score and a horizontal score. The final edge score is computed as:
+The `detect-edges` command highlights structural boundaries in an image by applying vertical and horizontal Sobel filters to a grayscale version of the source. For each pixel a 3 × 3 neighbourhood is convolved with each filter; each raw convolution sum is divided by 4 to produce a vertical score and a horizontal score. The final edge score is then computed as:
 
-```
+```text
 edge_score = sqrt(vertical_score² + horizontal_score²)
+           = sqrt(v² + h²) / 4
 ```
 
-The resulting edge map is then normalised to the range **[0, 1]** by dividing every value by the maximum score in the image, so the output is always a consistent floating-point array regardless of the input image's intensity range.
+where `v` and `h` are the raw convolution sums for the vertical and horizontal filters respectively. The resulting edge map is then normalised to the range **[0, 1]** by dividing every value by the maximum score in the image, so the output is always a consistent floating-point array regardless of the input image's intensity range.
 
 - **Interactive prompt:** none
 - **Output suffix:** `_edge`
@@ -73,7 +74,7 @@ The `contrast` command enhances the perceived contrast of an image using percent
 2. All pixel values are clamped to that range with `np.clip()`.
 3. The clamped values are linearly rescaled to a new maximum defined by your percentage input:
 
-```
+```text
 multiplier = int(percentage / 100 × 255)
 ```
 
@@ -129,7 +130,7 @@ Output file: `mountains_channel_rg.jpg`
 
 The `transparency` command converts the image to RGBA format and applies a uniform alpha (opacity) value to every pixel. You supply a **transparency percentage** — the fraction of opacity that will be *removed*. Internally, the alpha value is calculated as:
 
-```
+```text
 multiplier = int((100 - percentage) / 100 × 255)
 ```
 

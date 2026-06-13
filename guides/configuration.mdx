@@ -1,5 +1,5 @@
 ---
-title: "Configuring Image Transformation: Paths, Formats, and Dependencies"
+title: "Image Transformation: CLI Arguments and Dependencies"
 sidebarTitle: "Configuration"
 description: "Learn how Image Transformation is configured through CLI arguments and interactive prompts, with guidance on supported image formats and dependencies."
 ---
@@ -111,7 +111,7 @@ Image Transformation requires **Python 3.8 or later**. The codebase uses f-strin
 After saving the output image, the CLI runs:
 
 ```python
-os.system(f"start {dest}")
+os.system(f"start {sys.argv[3]}")
 ```
 
 On **Windows**, `start` is a built-in shell command that opens the destination folder in File Explorer. On **Linux and macOS**, `start` is not a system command, so this call is effectively a no-op — the image is saved correctly, but the folder does not open automatically. Open the output directory manually with your file manager or image viewer.

@@ -133,7 +133,7 @@ rgbchannel() -> None
 Isolates one or more colour channels by zeroing out the channels not selected. A new zero-filled array matching `self.inp`'s shape is created, and only the channels named in the user's input are copied from `self.inp`. For example, entering `rb` keeps the red and blue channels and zeroes the green channel, producing a magenta-tinted image. The method loops indefinitely until valid input matching the pattern `^r?g?b?$` is received.
 
 - **Prompt:** `Enter channel composition: ` — a string containing any combination of the characters `r`, `g`, and `b` in that order (e.g., `r`, `g`, `b`, `rg`, `rb`, `gb`, `rgb`). Input is lowercased automatically.
-- **Validation:** checked against the regular expression `^r?g?b?$`; any other string (including an empty string or a string with characters outside `r`, `g`, `b`) causes the prompt to repeat.
+- **Validation:** checked against the regular expression `^r?g?b?$`; any string containing characters other than `r`, `g`, or `b` (in that order) causes the prompt to repeat. Note that an empty string technically matches the pattern and is accepted, resulting in all channels being zeroed (a black image).
 - **Output dtype:** `uint8`
 - **Output shape:** same as `self.inp` — `(H, W, 3)`
 - **Returns:** `None` (sets `self.outp` in place)
@@ -289,9 +289,9 @@ Scales the image independently along the width and height axes using separate fl
 | Width factor | Height factor | Strategy |
 |---|---|---|
 | `> 1` | `> 1` | Both axes upscaled via `repeat` |
-| `> 1` | `<= 1` | Width upscaled via slice, height upscaled via `repeat` |
-| `<= 1` | `> 1` | Height upscaled via slice, width upscaled via `repeat` |
-| `<= 1` | `<= 1` | Both axes downscaled via stride slicing |
+| `> 1` | `<= 1` | Width upscaled, height downscaled — columns subsampled at stride `int(w)`, rows repeated by factor `h` |
+| `<= 1` | `> 1` | Height upscaled, width downscaled — rows subsampled at stride `int(h)`, columns repeated by factor `w` |
+| `<= 1` | `<= 1` | Both axes downscaled via stride slicing (`[::int(1/h), ::int(1/w)]`) |
 
 - **Prompts:**
   - `Enter scaling factor for width: ` — **float** (e.g., `1.5` to widen by 50 %, `0.5` to halve width)

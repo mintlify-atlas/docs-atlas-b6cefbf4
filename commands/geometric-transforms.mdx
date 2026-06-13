@@ -29,14 +29,14 @@ Output file: `mountains_flipped.jpg`
 
 The `rotate` command rotates the image by an arbitrary integer angle (in degrees) using a standard 2-D rotation matrix. For each pixel at coordinates `(x, y)` relative to the image centre, the new position is computed as:
 
-```
+```text
 new_x = x · cos(θ) + y · sin(θ)
 new_y = −x · sin(θ) + y · cos(θ)
 ```
 
 To ensure no part of the rotated image is cropped, the output canvas is automatically expanded so that the full bounding box of the rotated original fits inside it. The new dimensions are:
 
-```
+```text
 new_height = round(|height · cos(θ)| + |width · sin(θ)|) + 1
 new_width  = round(|width  · cos(θ)| + |height · sin(θ)|) + 1
 ```

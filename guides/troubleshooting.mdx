@@ -1,5 +1,5 @@
 ---
-title: "Troubleshooting Image Transformation: Common Errors and Fixes"
+title: "Image Transformation Troubleshooting: Errors and Fixes"
 sidebarTitle: "Troubleshooting"
 description: "Solutions for common Image Transformation errors: missing arguments, invalid image paths, module import issues, and transparency output problems."
 ---
@@ -10,7 +10,11 @@ Most problems with Image Transformation fall into one of three categories: incor
 
   <Accordion title="Error: Missing Arguments (too few or too many args)">
 
-    **Cause:** You provided fewer or more than three arguments after `main.py`. The dispatcher requires exactly three: a command, a source path, and a destination directory.
+    **Cause:** You provided fewer or more than three arguments after `main.py`. The dispatcher requires exactly three: a command, a source path, and a destination directory. The exact error printed to the console is:
+
+    ```
+    Missing Arguments. Run 'python main.py --help'
+    ```
 
     **Fix:** Make sure your command matches the expected shape exactly:
 
@@ -35,9 +39,13 @@ Most problems with Image Transformation fall into one of three categories: incor
 
   </Accordion>
 
-  <Accordion title="Error: Invalid Arguments (unrecognised command)">
+  <Accordion title="Error: Invalid arguments (unrecognised command)">
 
-    **Cause:** The command name you provided is not one of the ten recognised commands. This is usually a typo or a capitalisation mismatch — all command names are lowercase and hyphenated.
+    **Cause:** The command name you provided is not one of the ten recognised commands. This is usually a typo or a capitalisation mismatch — all command names are lowercase and hyphenated. The exact error printed to the console is:
+
+    ```
+    Invalid arguments. Run 'python main.py --help'
+    ```
 
     **Fix:** Check your spelling against the list of valid commands:
 
@@ -229,7 +237,7 @@ Most problems with Image Transformation fall into one of three categories: incor
 
   <Accordion title="os.system('start ...') does nothing on Linux or macOS">
 
-    **Cause:** After saving the output file, `main.py` calls `os.system(f"start {dest}")` to open the destination folder. `start` is a Windows Command Prompt built-in; it has no equivalent under the same name on Linux or macOS, so the call exits silently without opening anything.
+    **Cause:** After saving the output file, `main.py` calls `os.system(f"start {sys.argv[3]}")` to open the destination folder. `start` is a Windows Command Prompt built-in; it has no equivalent under the same name on Linux or macOS, so the call exits silently without opening anything.
 
     **Fix:** This only affects the auto-open behaviour — the image is saved correctly regardless. To view the output, open it manually:
 
